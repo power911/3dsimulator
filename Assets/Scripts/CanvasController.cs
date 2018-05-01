@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class CanvasController : MonoBehaviour {
+
     public static CanvasController Instance;
     [SerializeField] private Slider[] _sliders;
 

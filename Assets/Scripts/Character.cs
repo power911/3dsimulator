@@ -10,6 +10,7 @@ public class Character : MonoBehaviour
     [SerializeField] private GameObject _goField;
     [SerializeField] private float _goDistance;
     [SerializeField] private CharacterController _character;
+    [SerializeField] private PickUpObject _goPick;
 
     private float _cameraRotY;
     private float _cameraRotX;
@@ -22,19 +23,21 @@ public class Character : MonoBehaviour
         StartCoroutine(Food());
         StartCoroutine(Water());
         StartCoroutine(Temperature());
+        Cursor.visible = false;
     }
 
     private void Update()
     {
         Move();
         Hit();
+        Keys();
     }
 
     private void Move()
     {
         _cameraRotY -= Input.GetAxis("Mouse Y");
         _cameraRotX += Input.GetAxis("Mouse X");
-        _cameraRotY = Mathf.Clamp(_cameraRotY, -60, 50);
+        _cameraRotY = Mathf.Clamp(_cameraRotY, -90, 90);
         transform.Rotate(0, Input.GetAxis("Mouse X") * _rotSpeed, 0);
         Camera.main.transform.rotation = Quaternion.Euler(_cameraRotY, _cameraRotX * _rotSpeed, 0);
         _moveDirection = new Vector3(Input.GetAxis("Horizontal") * _speed, 0, Input.GetAxis("Vertical") * _speed);
@@ -60,18 +63,16 @@ public class Character : MonoBehaviour
             layer = ~layer;
             _goDistance -= Input.GetAxis("Mouse ScrollWheel");
             _goDistance = Mathf.Clamp(_goDistance, -1, 1);
-            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 5f, layer);
+            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 25f,layer);
             try
             {
-                if (_goField == null && (
-                    hit.transform.gameObject.GetComponent<Food>() != null ||
-                    hit.transform.gameObject.GetComponent<Alcohol>() != null ||
-                    hit.transform.gameObject.GetComponent<Water>() != null))
+                if (_goField == null && hit.transform.gameObject.GetComponent<PickUpObject>() != null )
                 {
                     _goField = hit.transform.gameObject;
                     _goField.transform.SetParent(this.gameObject.transform);
                     _goField.GetComponent<Rigidbody>().isKinematic = true;
-                    _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.04f);
+                    _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.01f);
+                    _goPick = _goField.GetComponent<PickUpObject>().PickUp;
                     CanvasController.Instance.RightClick.gameObject.SetActive(true);
                 }
             }
@@ -87,17 +88,9 @@ public class Character : MonoBehaviour
             }
             if (Input.GetMouseButtonDown(1))
             {
-                if(_goField != null && _goField.GetComponent<Food>() != null)
+                if(_goField != null)
                 {
-                    _goField.GetComponent<Food>().Using();
-                }
-                if(_goField != null && _goField.GetComponent<Alcohol>()!= null)
-                {
-                    _goField.GetComponent<Alcohol>().Using();
-                }
-                if (_goField != null && _goField.GetComponent<Water>() != null)
-                {
-                    _goField.GetComponent<Water>().Using();
+                    _goPick.Use();
                 }
                 CanvasController.Instance.RightClick.gameObject.SetActive(false);
             }
@@ -110,7 +103,16 @@ public class Character : MonoBehaviour
             _goField.transform.SetParent(null);
             _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.0f);
             _goField = null;
+            _goPick = null;
             CanvasController.Instance.RightClick.gameObject.SetActive(false);
+        }
+    }
+
+    private void Keys()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Cursor.visible = !Cursor.visible;
         }
     }
 
