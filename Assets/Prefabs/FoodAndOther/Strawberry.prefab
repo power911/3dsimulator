@@ -155,8 +155,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PickUp: {fileID: 114384307441769988}
-  _profit: 0
-  _unProfit: 0
+  _profit: 15
+  _unProfit: -15
   _particle: {fileID: 198153763403486390}
 --- !u!198 &198153763403486390
 ParticleSystem:

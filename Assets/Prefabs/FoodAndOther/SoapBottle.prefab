@@ -112,8 +112,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PickUp: {fileID: 114791239524232294}
-  _profit: 4
-  _unProfit: -2
+  _profit: 30
+  _unProfit: -5
 --- !u!136 &136561283022902036
 CapsuleCollider:
   m_ObjectHideFlags: 1

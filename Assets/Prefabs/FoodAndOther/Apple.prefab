@@ -215,8 +215,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PickUp: {fileID: 114174194402575200}
-  _profit: 2
-  _unProfit: -1
+  _profit: 15
+  _unProfit: 0
   _particle: {fileID: 198793887762185306}
 --- !u!135 &135756260794379836
 SphereCollider:

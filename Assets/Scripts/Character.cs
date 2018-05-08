@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Character : MonoBehaviour
 {
+    public static Character Instance;
 
     [SerializeField] private float _rotSpeed;
     [SerializeField] private float _speed;
@@ -14,9 +15,25 @@ public class Character : MonoBehaviour
 
     private float _cameraRotY;
     private float _cameraRotX;
+    private float _cameraRotZ;
     private bool _moving;
 
     Vector3 _moveDirection = Vector3.zero;
+
+    public float CameraRotZ { get {return _cameraRotZ ; }
+                              set {_cameraRotZ = value; }}
+
+    private void Awake()
+    {
+        if (!Instance)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Start()
     {
@@ -30,91 +47,89 @@ public class Character : MonoBehaviour
     {
         Move();
         Hit();
-        Keys();
     }
 
     private void Move()
     {
-        _cameraRotY -= Input.GetAxis("Mouse Y");
-        _cameraRotX += Input.GetAxis("Mouse X");
-        _cameraRotY = Mathf.Clamp(_cameraRotY, -90, 90);
-        transform.Rotate(0, Input.GetAxis("Mouse X") * _rotSpeed, 0);
-        Camera.main.transform.rotation = Quaternion.Euler(_cameraRotY, _cameraRotX * _rotSpeed, 0);
-        _moveDirection = new Vector3(Input.GetAxis("Horizontal") * _speed, 0, Input.GetAxis("Vertical") * _speed);
-        _moveDirection = transform.TransformDirection(_moveDirection);
-        _moveDirection.y -= 20f * Time.deltaTime;
-        _character.Move(_moveDirection * Time.deltaTime);
-        if(Input.GetButton("Horizontal")|| Input.GetButton("Vertical"))
+        if (!MainController.Instance.PanelPause.active)
         {
-            _moving = true;
-        }else
-        {
-            _moving = false;
+            _cameraRotY -= Input.GetAxis("Mouse Y");
+            _cameraRotX += Input.GetAxis("Mouse X");
+            _cameraRotY = Mathf.Clamp(_cameraRotY, -90, 90);
+            transform.Rotate(0, Input.GetAxis("Mouse X") * _rotSpeed, 0);
+            Camera.main.transform.rotation = Quaternion.Euler(_cameraRotY, _cameraRotX * _rotSpeed, _cameraRotZ);
+            _moveDirection = new Vector3(Input.GetAxis("Horizontal") * _speed, 0, Input.GetAxis("Vertical") * _speed);
+            _moveDirection = transform.TransformDirection(_moveDirection);
+            _moveDirection.y -= 20f * Time.deltaTime;
+            _character.Move(_moveDirection * Time.deltaTime);
+            if (Input.GetButton("Horizontal") || Input.GetButton("Vertical"))
+            {
+                _moving = true;
+            }
+            else
+            {
+                _moving = false;
+            }
         }
     }
 
     private void Hit()
     {
         RaycastHit hit;
-
-        if (Input.GetMouseButton(0))
+        if (!MainController.Instance.PanelPause.active)
         {
-            int layer = 1 << 8;
-            layer = ~layer;
-            _goDistance -= Input.GetAxis("Mouse ScrollWheel");
-            _goDistance = Mathf.Clamp(_goDistance, -1, 1);
-            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 25f,layer);
-            try
+            if (Input.GetMouseButton(0))
             {
-                if (_goField == null && hit.transform.gameObject.GetComponent<PickUpObject>() != null )
+                int layer = 1 << 8;
+                layer = ~layer;
+                _goDistance -= Input.GetAxis("Mouse ScrollWheel");
+                _goDistance = Mathf.Clamp(_goDistance, -1, 1);
+                Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 25f, layer);
+                try
                 {
-                    _goField = hit.transform.gameObject;
-                    _goField.transform.SetParent(this.gameObject.transform);
-                    _goField.GetComponent<Rigidbody>().isKinematic = true;
-                    _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.01f);
-                    _goPick = _goField.GetComponent<PickUpObject>().PickUp;
-                    CanvasController.Instance.RightClick.gameObject.SetActive(true);
+                    if (_goField == null && hit.transform.gameObject.GetComponent<PickUpObject>() != null)
+                    {
+                        _goField = hit.transform.gameObject;
+                        _goField.transform.SetParent(this.gameObject.transform);
+                        _goField.GetComponent<Rigidbody>().isKinematic = true;
+                        _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.01f);
+                        _goPick = _goField.GetComponent<PickUpObject>().PickUp;
+                        CanvasController.Instance.RightClick.gameObject.SetActive(true);
+                    }
+                }
+                catch (System.NullReferenceException) { Debug.Log("null"); }
+                if (_goField != null)
+                {
+                    float posZ = _goField.transform.localPosition.z - _goDistance * Time.deltaTime;
+                    float posY = _goField.transform.localPosition.y + _goDistance * Time.deltaTime;
+                    float posX = _goField.transform.localPosition.x;
+                    posZ = Mathf.Clamp(posZ, 1f, 1.3f);
+                    posY = Mathf.Clamp(posY, 0f, 0.9f);
+                    _goField.transform.localPosition = new Vector3(posX, posY, posZ);
+                }
+                if (Input.GetMouseButtonDown(1))
+                {
+                    if (_goField != null)
+                    {
+                        _goPick.Use();
+                    }
+                    CanvasController.Instance.RightClick.gameObject.SetActive(false);
                 }
             }
-            catch (System.NullReferenceException) { Debug.Log("null"); }
-            if (_goField != null)
+            if (Input.GetMouseButtonUp(0) && _goField != null)
             {
-                float posZ = _goField.transform.localPosition.z - _goDistance * Time.deltaTime;
-                float posY = _goField.transform.localPosition.y + _goDistance * Time.deltaTime;
-                float posX = _goField.transform.localPosition.x;
-                posZ = Mathf.Clamp(posZ, 1f, 1.3f);
-                posY = Mathf.Clamp(posY, 0f, 0.9f);
-                _goField.transform.localPosition = new Vector3(posX, posY, posZ);
-            }
-            if (Input.GetMouseButtonDown(1))
-            {
-                if(_goField != null)
-                {
-                    _goPick.Use();
-                }
+
+                _goField.GetComponent<Rigidbody>().isKinematic = false;
+                _goDistance = 0;
+                _goField.transform.SetParent(null);
+                _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.0f);
+                _goField = null;
+                _goPick = null;
                 CanvasController.Instance.RightClick.gameObject.SetActive(false);
             }
         }
-        if (Input.GetMouseButtonUp(0) && _goField != null)
-        {
-
-            _goField.GetComponent<Rigidbody>().isKinematic = false;
-            _goDistance = 0;
-            _goField.transform.SetParent(null);
-            _goField.GetComponent<Renderer>().material.SetFloat("_OutlineExtrusion", 0.0f);
-            _goField = null;
-            _goPick = null;
-            CanvasController.Instance.RightClick.gameObject.SetActive(false);
-        }
     }
 
-    private void Keys()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Cursor.visible = !Cursor.visible;
-        }
-    }
 
     IEnumerator Food()
     {

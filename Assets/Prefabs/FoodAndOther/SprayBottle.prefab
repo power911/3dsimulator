@@ -124,5 +124,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PickUp: {fileID: 114215102244705208}
-  _profit: -3
-  _unProfit: -3
+  _profit: 5
+  _unProfit: -25

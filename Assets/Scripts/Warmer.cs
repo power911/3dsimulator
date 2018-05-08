@@ -6,16 +6,30 @@ public class Warmer : PickUpObject {
 
     [SerializeField] private SphereCollider _sphere;
     [SerializeField] private ParticleSystem _particle;
+    [SerializeField] private GameObject _light;
     [SerializeField] private GameObject _character;
+   
     private Coroutine _tempCor;
+    public bool Active = false;
     
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.GetComponent<Mathce>() != null && collision.gameObject.GetComponent<Mathce>().Active)
+        if (collision.gameObject.GetComponent<Mathce>() != null && collision.gameObject.GetComponent<Mathce>().Active && !Active)
         {
+            Active = true;
             _sphere.enabled = true;
             Destroy(collision.gameObject, 1f);
             _particle.gameObject.SetActive(true);
+            _light.SetActive(true);
+            _tempCor = StartCoroutine(WarmsUp());
+            StartCoroutine(FireLifeTime());
+        }
+        if(collision.gameObject.GetComponent<Warmer>() != null && collision.gameObject.GetComponent<Warmer>().Active)
+        {
+            Active = true;
+            _sphere.enabled = true;
+            _particle.gameObject.SetActive(true);
+            _light.SetActive(true);
             _tempCor = StartCoroutine(WarmsUp());
             StartCoroutine(FireLifeTime());
         }
@@ -51,13 +65,12 @@ public class Warmer : PickUpObject {
     }
 
     private IEnumerator WarmsUp()
-    {
-        yield return null;
-        while (_character != null)
+    { 
+        do
         {
-            CanvasController.Instance.ChangeValueSlider(CanvasController.ESliders.Temperature, 2.5f);
-            yield return new WaitForSeconds(1.5f);
-        }
+            CanvasController.Instance.ChangeValueSlider(CanvasController.ESliders.Temperature, 7.5f);
+            yield return new WaitForSeconds(1f);
+        } while (_character != null);
     }
 
 }
